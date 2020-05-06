@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.0
+# Version: 1.1
 # License: MIT
 
 require 'csv'
@@ -10,13 +10,11 @@ require 'csv'
 #   else, exits
 def arg_count_validator
   # print help if no arguments are given or help is requested
-  return unless ARGV.length < 2 || ARGV[0] == '--help'
+  return unless (![1, 25].include?(25)) || ARGV[0] == '--help'
 
-  error_message = 'Usage: ruby %s [VoterInputFileName] [TokenOutputFileName]'
-  error_message += "\n\tOne header must contain \"School\", \"Organization\", "
-  error_message += 'or "Chapter"'
-  error_message += "\n\tAnother header must contain \"Delegates\" or \"Votes\""
-  warn format(error_message, $PROGRAM_NAME)
+  error_message = 'Usage: ruby %<ProgName>s [WordList] or ruby %<ProgName>s' \
+  ' [List of 25 words...]'
+  warn format(error_message, ProgName: $PROGRAM_NAME)
   exit 1
 end
 
@@ -48,15 +46,14 @@ def gen_empty_array(size)
   board
 end
 
-# Generate a 2D array of words
+# Generate a 2D array of words from the command line
 #
 # @param [Array<String>] word_list The list of words that can be used
 # @return [Array<Array<String>>] The board of shuffled words
-def gen_words(word_list)
-  shuffled_list = word_list.uniq.shuffle
+def gen_word_board(word_list)
   board = gen_empty_array(5)
   (0...25).each do |i|
-    board[i / 5][i % 5] = shuffled_list[i]
+    board[i / 5][i % 5] = word_list[i]
   end
   board
 end
@@ -129,24 +126,65 @@ def longest_word(board)
   longest_word_length
 end
 
+# Formats a single tile
+#
+# @param [String] word The word for a given tile
+# @param [String] team The team associated with that tile
+def board_format(word, team)
+  if team.strip.empty?
+    word
+  else
+    format('%<Word>s (%<Team>s)', Word: word, Team: team)
+  end
+end
+
+# Formats the game board with team names
+#
+# @param [Array<Array<String>>] board The word list
+# @param [Array<Array<String>>] spy_board The assignment of words to teams
+# @return [Array<Array<String>>] The formatted board
+def combine_board(board, spy_board)
+  combined_board = gen_empty_array(5)
+  board.each_index do |line|
+    board[line].each_index do |word|
+      combined_board[line][word] = board_format(board[line][word],
+                                                spy_board[line][word])
+    end
+  end
+  combined_board
+end
+
 # Print the board
 #
 # @param [Array<Array<String>>] board The board to be printed
 def print_board(board)
   format_string = format('%%-%<Length>ds', Length: longest_word(board))
   board.each do |line|
-    puts('| ' + (line.map { |word| format(format_string, word) }.join(' | ')) + '| ')
+    puts('| ' + line.map { |word| format(format_string, word) }.join(' | ') +
+             '| ')
   end
 end
 
-# Run the main program
-def main
-  board = gen_words(read_csv(ARGV[0]))
-  spy_board = gen_spy_board
+# Outputs all necessary information
+# @param [Array<Array<String>>] board The word list
+def output(board)
+  if ARGV.length == 1
+    puts 'Sharable Table:'
+    print_board(board)
+    puts "\n\n"
+  end
 
-  print_board(board)
-  puts "\n\n"
-  print_board(spy_board)
+  puts 'Key:'
+  print_board(combine_board(board, gen_spy_board))
+end
+
+def main
+  arg_count_validator
+  if ARGV.length == 1
+    output gen_word_board(read_csv(ARGV[0]).uniq.shuffle)
+  elsif ARGV.length == 25
+    output gen_word_board(ARGV)
+  end
 end
 
 main
