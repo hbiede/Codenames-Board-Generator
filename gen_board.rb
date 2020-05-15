@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Author: Hundter Biede (hbiede.com)
-# Version: 1.1
+# Version: 1.1.1
 # License: MIT
 
 require 'csv'
@@ -10,7 +10,7 @@ require 'csv'
 #   else, exits
 def arg_count_validator
   # print help if no arguments are given or help is requested
-  return unless (![1, 25].include?(25)) || ARGV[0] == '--help'
+  return unless (![1, 25].include?(ARGV.count)) || ARGV[0] == '--help'
 
   error_message = 'Usage: ruby %<ProgName>s [WordList] or ruby %<ProgName>s' \
   ' [List of 25 words...]'
